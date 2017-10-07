@@ -106,7 +106,8 @@ class Alphabet:
             return -self.convert(-x)
         etable = self.eexacts
         lo = 0
-        hi = len(etable)-1
+        hi = len(etable)
+        print ("lookup table ",len(etable)," starting ",(lo,hi))
         if x < 1:
             while True:
                 mid = lo + ((hi - lo) >> 1)
@@ -192,8 +193,8 @@ class Pnum:
         return x == 0
     def isinf(self):
         return self.v == (self.base.n2 >> 1)
-    def isexact(self,x):
-        return (x & 1) == 0 # ubit
+    def isexact(self):
+        return (self.v & 1) == 0 # ubit
     def next(self):
         return self.base.next(self.v)
     def prev(self):
@@ -326,15 +327,16 @@ class Pnum:
         if self.isinf():
             return "pnum(inf)"
         else:
+            e = "" if self.isexact() else "?"
             v = self.exactvalue()
             if not isinstance(v,fractions.Fraction):
-                return "pnum(%s)" % v
+                return "pnum%s(%s)" % (e,v)
             elif v.denominator == 1:
-                return "pnum(%s)" % v.numerator
+                return "pnum%s(%s)" % (e,v.numerator)
             elif v.numerator == 1:
-                return "pnum(1/%s)" % v.denominator
+                return "pnum%s(1/%s)" % (e,v.denominator)
             else:
-                return "pnum(%s/%s)" % (v.numerator,v.denominator)
+                return "pnum%s(%s/%s)" % (e,v.numerator,v.denominator)
 
 
 # interval using two Pnum

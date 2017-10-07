@@ -1,5 +1,5 @@
 from punum import *
-
+import math
 
 ap = Alphabet.p4();
 
@@ -16,10 +16,15 @@ for i,x in enumerate(Pbound.everything(ap).iter()):
 	#print (dict(index=i,valueindex=x.v,invindex=ix.v,negindex=nx.v,isstrictlynegative=x.isstrictlynegative(),isfractional=x.isfractional(),isinvfractional=ix.isfractional()))
 	print ("\t",dict(index=i,value=str(x),inv=str(ix),beg=str(nx),abs=str(x.abs())))
 
-print ("1.6",ap.convert(1.6))
+# negatives are handled by flipping
+print ("1.6",ap.convert(1.6)) # 1+
 print ("---")
-print ("2",ap.convert(2))
-print ("0.5",ap.convert(0.5))
-print ("2.5",ap.convert(2.5))
-print ("1.8",ap.convert(1.8))
-print ("1.2",ap.convert(1.2))
+print ("2",ap.convert(2)) # exact
+print ("0.1",ap.convert(0.2)) # MAYBE 0+ <<<<----- VERIFY
+print ("0.4",ap.convert(0.4)) # MAYBE 0+ <<<<----- VERIFY
+print ("0.5",ap.convert(0.5)) # exact
+print ("2.5",ap.convert(2.5)) # 2+
+print ("1.8",ap.convert(1.8)) # 1+
+print ("1.2",ap.convert(1.2)) # 1+
+print ("12000",ap.convert(1200)) # 2+
+print ("inf",ap.convert(math.inf)) # inf
