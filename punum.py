@@ -86,55 +86,61 @@ class Alphabet:
         return Pnum(self,x & self.mask) # & self.pnmod(,
     def convert(self,value):
         if isinstance(value,numbers.Rational):
-            return self.searchvalue(float(value))
+            return self._searchvalue(float(value))
         else:
-            if cmath.isnan(value):
+            if cmath.isinf(value):
+                return self.inf()
+            elif cmath.isnan(value):
                 raise Exception("cannot cast nan to pnum")
             else:
-                return self.searchvalue(value)
-    def searchvalue(self,x):
+                return self._searchvalue(value)
+    def fromexactsindex(self,idx):
+        print ("found at idx",idx,self.eexacts[idx])
+        #index(one(T)) + (convert(storagetype(T), i - 1) << 1)
+        iidx = (self.n2>>2)+((idx)<<1)
+        return self.rawpnum(iidx)
+    def _searchvalue(self,x):
         if x == 0:
             return self.zero()
         if x < 0:
             return -self.convert(-x)
-        if cmath.isinf(x):
-            return self.inf()
         etable = self.eexacts
+        lo = 0
+        hi = len(etable)-1
         if x < 1:
-            lo = 0
-            hi = len(etable)
             while True:
                 mid = lo + ((hi - lo) >> 1)
                 if (mid == lo or mid == hi):
                     break
                 lo, hi = (mid,hi) if (inv(etable[mid]) > x) else (lo, mid)
-            if lo > 0 and inv(etable[lo]) == x:
-                return inv(fromexactsindex(T, lo))
-            if hi <= len(etable) and inv(etable[hi]) == x:
-                return inv(fromexactsindex(T, hi))
-            if lo == 0:
-             return prevpnum(one(T)) # Never happens
-            if hi > len(etable):
-                return nextpnum(zero(T))
-            return inv(nextpnum(fromexactsindex(T, lo)))
+            if lo >= 0 and inv(etable[lo]) == x:
+                return inv(self.fromexactsindex(lo))
+            elif hi < len(etable) and inv(etable[hi]) == x:
+                return inv(self.fromexactsindex(hi))
+            elif lo == 0:
+             return self.one().prev()
+            elif hi >= len(etable):
+                return self.zero().next()
+            else:
+                return inv((self.fromexactsindex(lo).next()))
         else:
-            lo = 0
-            hi = len(etable)
             while True:
               mid = lo + ((hi - lo) >> 1)
               if (mid == lo or mid == hi):
                 break
               lo, hi = (mid,hi) if (etable[mid] < x) else (lo, mid)
 
-            if lo > 0 and etable[lo] == x:
-                return fromexactsindex(T, lo)
-            if hi <= len(etable) and etable[hi] == x:
-                return fromexactsindex(T, hi)
-            if lo == 0:
-                return nextpnum(one(T)) # Never happens
-            if hi > len(etable): 
-                return prevpnum(pninf(T))
-            return nextpnum(fromexactsindex(T, lo))
+            print ("found with",lo,hi)
+            if lo >= 0 and etable[lo] == x: # exaxt low
+                return self.fromexactsindex(lo)
+            elif hi < len(etable) and etable[hi] == x: # exact high
+                return self.fromexactsindex(hi)
+            elif lo == 0: # low is first, then next of first
+                return self.one().next()
+            elif hi >= len(etable): # past use prev
+                return self.inf().prev()
+            else:
+                return self.fromexactsindex(lo).next()
     @staticmethod
     def p3():
         return Alphabet((fracions.Fraction(1,1)))
@@ -153,10 +159,10 @@ class Pnum:
         self.base = base
         self.v = v
     def __mul__(self,other):
-        # mapreduce(*,Sopn, eachpnum(self),eachpnum(other)) 
+        # mapreduce(*,Sopn, eachpnum(self),eachpnum(other))
         pass
     def __add__(self,other):
-        # mapreduce(+,Sopn, eachpnum(self),eachpnum(other)) 
+        # mapreduce(+,Sopn, eachpnum(self),eachpnum(other))
         pass
     def __div__(self,other):
         return self*(~other)
@@ -256,7 +262,7 @@ class Pnum:
         z1 = z1.next() if (not abe and z1.isexact()) else z1
         z2 = z2.next() if (not abe and z2.isexact()) else z2
         return Pbound(self.base,z1,z2)
-    # 
+    #
     def slowtwice(self):
         ai = self.isinf()
         if a:
@@ -322,8 +328,8 @@ class Pnum:
         else:
             v = self.exactvalue()
             if not isinstance(v,fractions.Fraction):
-                return "pnum(%s)" % v 
-            elif v.denominator == 1: 
+                return "pnum(%s)" % v
+            elif v.denominator == 1:
                 return "pnum(%s)" % v.numerator
             elif v.numerator == 1:
                 return "pnum(1/%s)" % v.denominator
@@ -338,7 +344,7 @@ class Pbound:
         if first_or_empty is True:
             self.empty = True
             self.v = (last,last)
-        else:   
+        else:
             if not isinstance(first_or_empty,Pnum):
                 raise Exception("expected Pnum")
             if last is not None and not isinstance(first_or_empty,Pnum):
@@ -415,16 +421,16 @@ class Sopn:
         # float
         pass
     def __mul__(self,other):
-        # mapreduce(*,Sopn, eachpnum(self),eachpnum(other)) 
+        # mapreduce(*,Sopn, eachpnum(self),eachpnum(other))
         pass
     def __div__(self,other):
-        # mapreduce(/,Sopn, eachpnum(self),eachpnum(other)) 
+        # mapreduce(/,Sopn, eachpnum(self),eachpnum(other))
         pass
     def __add__(self,other):
-        # mapreduce(+,Sopn, eachpnum(self),eachpnum(other)) 
+        # mapreduce(+,Sopn, eachpnum(self),eachpnum(other))
         pass
     def __sub__(self,other):
-        # mapreduce(-,Sopn, eachpnum(self),eachpnum(other)) 
+        # mapreduce(-,Sopn, eachpnum(self),eachpnum(other))
         pass
     def __neg__(self):
         # mapreduce((-),Sopn, eachpnum(self))
@@ -459,7 +465,7 @@ class Sopn:
 
 @inv.register(Sopn)
 def _(arg ):
-    return arg.__invert__(); 
+    return arg.__invert__();
 
 @pow.register(Sopn)
 def _(arg,n):
@@ -479,7 +485,7 @@ def _(arg):
 
 @inv.register(Pnum)
 def _(arg ):
-    return arg.__invert__(); 
+    return arg.__invert__();
 
 @pow.register(Pnum)
 def _(arg,n):

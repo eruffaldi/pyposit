@@ -16,6 +16,10 @@ for i,x in enumerate(Pbound.everything(ap).iter()):
 	#print (dict(index=i,valueindex=x.v,invindex=ix.v,negindex=nx.v,isstrictlynegative=x.isstrictlynegative(),isfractional=x.isfractional(),isinvfractional=ix.isfractional()))
 	print ("\t",dict(index=i,value=str(x),inv=str(ix),beg=str(nx),abs=str(x.abs())))
 
-# cast
-print (ap.convert(2))
-print (ap.convert(2.5))
+print ("1.6",ap.convert(1.6))
+print ("---")
+print ("2",ap.convert(2))
+print ("0.5",ap.convert(0.5))
+print ("2.5",ap.convert(2.5))
+print ("1.8",ap.convert(1.8))
+print ("1.2",ap.convert(1.2))
