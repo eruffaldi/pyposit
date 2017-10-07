@@ -3,6 +3,8 @@ from functools import singledispatch
 import fractions
 import cmath
 import numbers
+from typing import Union,Optional
+import math
 
 @singledispatch
 def exp(arg):
@@ -17,8 +19,12 @@ def pow(arg,n):
     pass
 
 @singledispatch
+def neg(arg):
+    return -arg
+
+@singledispatch
 def inv(arg):
-    pass
+    return 1/arg
 
 
 """
@@ -55,9 +61,11 @@ class Alphabet4:
 class Alphabet:
     def __init__(self,eexacts):
         self.eexacts = eexacts
-        self.n = len(eexacts)+1
-        self.n2 = 2**self.n
+        self.n = len(eexacts)+2 # 0 and infinity
+        self.n2 = 1 << self.n   # 2^n
+        self.mask = self.n2-1 # mask for 2^n
         self.storagetype = "auto"
+        print ("mask is ",bin(self.mask), " n2 is ",self.n2," n exacts ",self.n," exacts ",eexacts )
     def one(self):
         return self.rawpnum(self.n2>>2)
     def zero(self):
@@ -67,15 +75,15 @@ class Alphabet:
     def pnnvalues(self):
         return self.n2
     def pnnmask(self):
-        return self.n2-1 # as type
+        return self.mask
     def pnmod(self,x):
         return x & self.pnnmask()
     def next(self,x):
-        return Pnum(self,(x + (self.n2 >> 2)) & self.pnnmask()) # 1
+        return Pnum(self,(x + 1) & self.mask) # 1
+    def prev(self,x):
+        return Pnum(self,(x - 1) & self.mask) # 1
     def rawpnum(self,x):
-        #q = bitstring.BitArray(self.n2)
-        #q.int = x
-        return Pnum(self,x) # & self.pnmod(,
+        return Pnum(self,x & self.mask) # & self.pnmod(,
     def convert(self,value):
         if isinstance(value,numbers.Rational):
             return self.searchvalue(float(value))
@@ -91,36 +99,48 @@ class Alphabet:
             return -self.convert(-x)
         if cmath.isinf(x):
             return self.inf()
-        etable = self.exacts()
+        etable = self.eexacts
         if x < 1:
+            lo = 0
+            hi = len(etable)
             while True:
                 mid = lo + ((hi - lo) >> 1)
                 if (mid == lo or mid == hi):
                     break
                 lo, hi = (mid,hi) if (inv(etable[mid]) > x) else (lo, mid)
-            #lo > 0 && inv(etable[lo]) == x && return inv(fromexactsindex(T, lo))
-            #hi <= length(etable) && inv(etable[hi]) == x && return inv(fromexactsindex(T, hi))
-            #lo == 0 && return prevpnum(one(T)) # Never happens
-            #hi > length(etable) && return nextpnum(zero(T))
-            #return inv(nextpnum(fromexactsindex(T, lo)))
+            if lo > 0 and inv(etable[lo]) == x:
+                return inv(fromexactsindex(T, lo))
+            if hi <= len(etable) and inv(etable[hi]) == x:
+                return inv(fromexactsindex(T, hi))
+            if lo == 0:
+             return prevpnum(one(T)) # Never happens
+            if hi > len(etable):
+                return nextpnum(zero(T))
+            return inv(nextpnum(fromexactsindex(T, lo)))
         else:
+            lo = 0
+            hi = len(etable)
             while True:
               mid = lo + ((hi - lo) >> 1)
               if (mid == lo or mid == hi):
                 break
               lo, hi = (mid,hi) if (etable[mid] < x) else (lo, mid)
 
-            #lo > 0 && etable[lo] == x && return fromexactsindex(T, lo)
-            #hi <= length(etable) && etable[hi] == x && return fromexactsindex(T, hi)
-            #lo == 0 && return nextpnum(one(T)) # Never happens
-            #hi > length(etable) && return prevpnum(pninf(T))
-            #return nextpnum(fromexactsindex(T, lo))
+            if lo > 0 and etable[lo] == x:
+                return fromexactsindex(T, lo)
+            if hi <= len(etable) and etable[hi] == x:
+                return fromexactsindex(T, hi)
+            if lo == 0:
+                return nextpnum(one(T)) # Never happens
+            if hi > len(etable): 
+                return prevpnum(pninf(T))
+            return nextpnum(fromexactsindex(T, lo))
     @staticmethod
     def p3():
-        return Alphabet((1,))
+        return Alphabet((fracions.Fraction(1,1)))
     @staticmethod
     def p4():
-        return Alphabet((1,2))
+        return Alphabet((fractions.Fraction(1,1),fractions.Fraction(2,1)))
     @staticmethod
     def p8():
         return Alphabet([fractions.Fraction(2**n*(4 + m),4) for m in range(0,4) for n in range(0,8)])
@@ -143,15 +163,17 @@ class Pnum:
     def __sub__(self,other):
         return self+(-other)
     def __neg__(self):
-        return Pnum(self.base,-self.v)
-    def __invert__(self): # ~x == /x
-        return Pnum(self.base,-(self.v+self.base.inf()))
+        return self.base.rawpnum(-self.v)
+    def __invert__(self): # -(x + index(inf))
+        return self.base.rawpnum(-(self.v+(self.base.n2 >> 1)))
     def one(self):
         return self.rawpnum(self.n2 >> 2)
     def zero(self):
         return self.rawpnum(0)
     def inf(self):
         return self.rawpnum(self.n2 >> 1)
+    def abs(self):
+        return -self if self.isstrictlynegative() else self
     def fromindex(self,i):
         # generic index 0..n2
         return self.rawpnum(i)
@@ -167,11 +189,14 @@ class Pnum:
     def isexact(self,x):
         return (x & 1) == 0 # ubit
     def next(self):
-        return (self.v + (self.base.n2 >> 2)) & self.base.pnnmask() # 1
+        return self.base.next(self.v)
     def prev(self):
-        return (self.v - (self.base.n2 >> 2)) & self.base.pnnmask() # 1
+        return self.base.prev(self.v)
     def isstrictlynegative(self):
-        return self.v > (self.base.n2>>1) # pinf
+        return self.v > (self.base.n2>>1)# pinf
+    def isfractional(self):
+        w = self.abs().v
+        return (w > 0) and (w < (self.base.n2>>2))
     def _exacttimes(self,other):
         rx = self.exactvalue().widen()
         ry = other.exactvalue().widen()
@@ -276,40 +301,48 @@ class Pnum:
         z2 = z2.next() if (not abe and z2.isexact()) else z2
         return Pbound(self.base,z1,z2)
     def exactvalue(self):
-        x = self.v
-        if self.isstrictlynegative():
-            return -self.exactvalue(-x)
-        if x < (self.base.n2>>2):
-            return inv(self.exactvalue(inv(x)))
+        # zero, infinity are special
+        # fractional => integral and flip
+        # negative => positive and flp resilts
+        if self.isinf():
+            return math.inf #fractions.Fraction(1,0)
+        if self.v == 0:
+            return 0
+        elif self.isstrictlynegative():
+            return -((-self).exactvalue())
+        if self.isfractional():
+            return inv(inv(self).exactvalue())
         else:
-            if self.isinf():
-                return fractions.Fraction(1,0)
-            else:
-                return self.base.eexacts[(x -  (self.base.n2>>2))] #index(x) - index(one(x))) >> 1) + 1
+            # POSITIVE and NOT FRACTIONAL one..inf
+            i1 = self.base.n2>>2
+            return self.base.eexacts[((self.v - i1)>>1)] #index(x) - index(one(x))) >> 1) + 1
     def __str__(self):
         if self.isinf():
-            return "pnum(/0)"
+            return "pnum(inf)"
         else:
             v = self.exactvalue()
-            if v.denominator == 1: 
+            if not isinstance(v,fractions.Fraction):
+                return "pnum(%s)" % v 
+            elif v.denominator == 1: 
                 return "pnum(%s)" % v.numerator
             elif v.numerator == 1:
-                return "pnum(/%s)" % v.denominator
+                return "pnum(1/%s)" % v.denominator
             else:
                 return "pnum(%s/%s)" % (v.numerator,v.denominator)
 
 
 # interval using two Pnum
 class Pbound:
-    def __init__(self,first_or_empty,last=None):
+    def __init__(self,first_or_empty:Union[Pnum,bool],last:Optional[Pnum]=None):
+        #print ("Pbound",first_or_empty,last)
         if first_or_empty is True:
             self.empty = True
             self.v = (last,last)
         else:   
             if not isinstance(first_or_empty,Pnum):
-                raise Exception("expection")
+                raise Exception("expected Pnum")
             if last is not None and not isinstance(first_or_empty,Pnum):
-                raise Exception("expection")
+                raise Exception("expected Pnum")
             self.empty = False
             self.v = (first_or_empty,first_or_empty if last is None else last)
     def complement(self):
@@ -323,9 +356,10 @@ class Pbound:
         if self.empty:
             return
         f,l = self.v
-        while f != l:
-            yield f
+        yield f
+        while f.v != l.v:
             f = f.next()
+            yield f
     def iseverything(self):
         return self.v[0] == self.v[1].next()
     @property
@@ -351,7 +385,15 @@ class Pbound:
         return Pbound(base.zero().next(),base.zero().prev())
     @staticmethod
     def everything(base):
-        return Pbound(base.inf().next(),base.inf())
+        return Pbound(base.zero(),base.zero().prev())
+
+    def __str__(self):
+        if self.empty:
+            return "pbound()"
+        elif self.v[0] == self.v[1]:
+            return "pbound(%s)" % self.v[0]
+        else:
+            return "pbound(%s,%s)" % self.v
 
 """def asfloat(self):
     pass
@@ -431,7 +473,9 @@ def _(arg):
 def _(arg):
     return self.sqrt()
 
-
+@neg.register(Sopn)
+def _(arg):
+    return -self
 
 @inv.register(Pnum)
 def _(arg ):
