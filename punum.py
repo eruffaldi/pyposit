@@ -61,8 +61,14 @@ class Alphabet4:
 class Alphabet:
     def __init__(self,eexacts):
         self.eexacts = eexacts
-        self.n = len(eexacts)+2 # 0 and infinity
-        self.n2 = 1 << self.n   # 2^n
+        self.n = len(eexacts) # 0 and infinity excluded
+        self.n2 = ((len(eexacts))<<3)  # number of points
+        # e.g. for having 32bits we need 2^29 exact points (!) 
+        #   float has: 6 decimal digits exacts integers
+        #   float has al 2^n exact
+        #   how many?
+        #   from here to 2^29 there is a long way
+        # table cost is prohibitive
         self.mask = self.n2-1 # mask for 2^n
         self.storagetype = "auto"
         if verbose:
@@ -342,8 +348,89 @@ class Pnum:
                 return "pnum%s(1/%s)" % (e,v.denominator)
             else:
                 return "pnum%s(%s/%s)" % (e,v.numerator,v.denominator)
+    def sqrt(self):
+        if self.isstrictlynegative():
+            return Pbound(True)
+        xe = self.isexact()
+        if xe:
+            sr = self.base.convert(math.sqrt(self.exactvalue()))
+            x1,x2 = x,x
+            y1,y2 = sr
+        else:
+            x1,x2 =  (self.prev(),self.next())
+            y1,y2 = self.base.convert(math.sqrt(x1.exactvalue())),self.base.convert(math.sqrt(x2.exactvalue()))
 
+        if y1.isexact():
+            if not xe:
+                y1 = y1.next()
+            elif y1*y1 != x1: #precompute exactness of sqrt
+                y1 = y1.prev() 
+        if y2.isexact():
+            if not xe:
+                y2 = y2.prev()
+            elif y2*y2 != x2: #precompute exactness of sqrt
+                y2 = y2.next()
 
+        return Pbound(y1,y2)
+
+    def pow(self,n):
+        """
+         T = typeof(x)
+          xexact = isexact(x)
+
+          # TODO converting to floats to avoid underflow/overflow problems.
+          # Should figure out if there's a decent way to work exactly
+          x1, x2 = xexact ? (x, x) : (prevpnum(x), nextpnum(x))
+          if xexact
+            y1 = y2 = T(convert(Float64, exactvalue(x1))^n)
+          else
+            y1, y2 = T(convert(Float64, exactvalue(x1))^n), T(convert(Float64, exactvalue(x2))^n)
+          end
+
+          if iseven(n) && isstrictlynegative(x)
+            y1, y2 = y2, y1
+          end
+
+          y1 = !xexact && isexact(y1) ? nextpnum(y1) : y1
+          y2 = !xexact && isexact(y2) ? prevpnum(y2) : y2
+
+          Pbound(y1, y2)
+          """
+        pass
+
+    def exp(self):
+        if self.isinf():
+            return Pbound(self.base.zero(),self.base.inf())
+        xe = self.isexact()
+        if xe:
+            sr = self.base.convert(math.exp(self.exactvalue()))
+            x1,x2 = x,x
+            y1,y2 = sr
+        else:
+            x1,x2 =  (self.prev(),self.next())
+            y1,y2 = self.base.convert(math.exp(x1.exactvalue())),self.base.convert(math.sqrt(x2.exactvalue()))
+
+        if y1.isexact():
+            if x1.iszero():
+                y1 = y1 if xe else y1.next()
+            elif y1.isinf():
+                y1 = y1 if xe else y1.next()
+            else:
+                y1 = y1.prev()
+        if y2.isexact():
+            if x2.iszero():
+                y2 = y2 if xe else y2.prev()
+            elif y1.isinf():
+                y2 = y2 if xe else y2.prev()
+            else:
+                y2 = y2.next()
+
+        if x1.isinf():
+            return Pbound(self.base.zero().next(),y2)
+        elif x2.isinf():
+            return Pboun(y1,self.base.inf().prev())
+        else:
+            return Pbound(y1,y2)
 # interval using two Pnum
 class Pbound:
     def __init__(self,first_or_empty:Union[Pnum,bool],last:Optional[Pnum]=None):
