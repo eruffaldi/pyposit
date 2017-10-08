@@ -21,3 +21,6 @@ Using elements of the Julia version https://github.com/jwmerrill/Pnums.jl
 - storing the op tables
 - pbound operations
 
+# Ideas
+
+- map indices of Pnum given set A to indices of set B (e.g. from 16bit to 8bit and viceversa) assuming that the intervals are compatible (subset/superset)
