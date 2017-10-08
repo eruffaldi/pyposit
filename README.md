@@ -3,6 +3,8 @@ Gustafson Unum 2.0 written in Python
 
 Using elements of the Julia version https://github.com/jwmerrill/Pnums.jl
 
+# Example of Plus and Times Table for the Set 4
+
 
 # Missing
 
@@ -11,3 +13,5 @@ Using elements of the Julia version https://github.com/jwmerrill/Pnums.jl
 - sqrt
 - exp
 - storing the op tables
+
+

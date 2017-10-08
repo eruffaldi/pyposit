@@ -35,21 +35,31 @@ print("inf", ap.convert(math.inf))  # inf
 # summation
 
 print ("diff",(ap.convert(2) - ap.convert(1)))
-
+showids = True
 for l in [lambda x,y:x+y, lambda x,y:x*y]:
 	tt = []
 	tr0 = []
 	tt.append(tr0)
 	for i, x in enumerate(Pbound.everything(ap).iter()):
 		tr = []
-		tr0.append(str(x).replace("pnum",""))
-		tr.append(str(x).replace("pnum",""))
+		what = x
+		if showids:
+			what = x.v
+		tr0.append(str(what).replace("pnum",""))
+		tr.append(str(what).replace("pnum",""))
 		tt.append(tr)
 		for j, y in enumerate(Pbound.everything(ap).iter()):
 			if j > i:
 				tr.append(None)
 				continue
-			tr.append(str(l(x,y)).replace("pbound","").replace("pnum",""))
+			w = l(x,y)
+			if showids:
+				if isinstance(w,Pbound):		
+					tr.append((w.v[0].v,w.v[1].v))
+				else:
+					tr.append(w.v)
+			else:
+				tr.append(str(w).replace("pbound","").replace("pnum",""))
 			#print (x,y,"gives",x+y)
 	print (tabulate(tt,headers="firstrow",tablefmt="presto"))
 	if False:
