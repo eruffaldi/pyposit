@@ -17,6 +17,7 @@ Using elements of the Julia version https://github.com/jwmerrill/Pnums.jl
 - testing of p8 and p8b sets
 - sqrt
 - exp
+- maximum
 - storing the op tables
-
+- pbound operations
 
