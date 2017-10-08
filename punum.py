@@ -1,4 +1,3 @@
-import bitstring
 from functools import singledispatch
 import fractions
 import cmath
@@ -26,6 +25,7 @@ def neg(arg):
 def inv(arg):
     return 1/arg
 
+verbose = False
 
 """
 class Alphabet3:
@@ -65,7 +65,8 @@ class Alphabet:
         self.n2 = 1 << self.n   # 2^n
         self.mask = self.n2-1 # mask for 2^n
         self.storagetype = "auto"
-        print ("mask is ",bin(self.mask), " n2 is ",self.n2," n exacts ",self.n," exacts ",eexacts )
+        if verbose:
+            print ("mask is ",bin(self.mask), " n2 is ",self.n2," n exacts ",self.n," exacts ",eexacts )
     def one(self):
         return self.rawpnum(self.n2>>2)
     def zero(self):
@@ -95,7 +96,8 @@ class Alphabet:
             else:
                 return self._searchvalue(value)
     def fromexactsindex(self,idx):
-        print ("found at idx",idx,self.eexacts[idx])
+        if verbose:
+            print ("found at idx",idx,self.eexacts[idx])
         #index(one(T)) + (convert(storagetype(T), i - 1) << 1)
         iidx = (self.n2>>2)+((idx)<<1)
         return self.rawpnum(iidx)
@@ -107,7 +109,8 @@ class Alphabet:
         etable = self.eexacts
         lo = 0
         hi = len(etable)
-        print ("lookup table ",len(etable)," starting ",(lo,hi))
+        if verbose:
+            print ("lookup table ",len(etable)," starting ",(lo,hi))
         if x < 1:
             while True:
                 mid = lo + ((hi - lo) >> 1)
@@ -131,7 +134,8 @@ class Alphabet:
                 break
               lo, hi = (mid,hi) if (etable[mid] < x) else (lo, mid)
 
-            print ("found with",lo,hi)
+            if verbose:
+                print ("found with",lo,hi)
             if lo >= 0 and etable[lo] == x: # exaxt low
                 return self.fromexactsindex(lo)
             elif hi < len(etable) and etable[hi] == x: # exact high
@@ -144,10 +148,13 @@ class Alphabet:
                 return self.fromexactsindex(lo).next()
     @staticmethod
     def p3():
-        return Alphabet((fracions.Fraction(1,1)))
+        return Alphabet((fractions.Fraction(1,1),))
     @staticmethod
     def p4():
         return Alphabet((fractions.Fraction(1,1),fractions.Fraction(2,1)))
+    @staticmethod
+    def p8b():
+        return Alphabet((fractions.Fraction(1,1),fractions.Fraction(2,1),fractions.Fraction(4,1),fractions.Fraction(8,1),fractions.Fraction(16,1),fractions.Fraction(32,1)))
     @staticmethod
     def p8():
         return Alphabet([fractions.Fraction(2**n*(4 + m),4) for m in range(0,4) for n in range(0,8)])
@@ -160,11 +167,9 @@ class Pnum:
         self.base = base
         self.v = v
     def __mul__(self,other):
-        # mapreduce(*,Sopn, eachpnum(self),eachpnum(other))
-        pass
+        return self.slowtimes(other)
     def __add__(self,other):
-        # mapreduce(+,Sopn, eachpnum(self),eachpnum(other))
-        pass
+        return self.slowplus(other)
     def __div__(self,other):
         return self*(~other)
     def __sub__(self,other):
@@ -174,11 +179,11 @@ class Pnum:
     def __invert__(self): # -(x + index(inf))
         return self.base.rawpnum(-(self.v+(self.base.n2 >> 1)))
     def one(self):
-        return self.rawpnum(self.n2 >> 2)
+        return self.base.one()
     def zero(self):
-        return self.rawpnum(0)
+        return self.base.zero()
     def inf(self):
-        return self.rawpnum(self.n2 >> 1)
+        return self.base.inf()
     def abs(self):
         return -self if self.isstrictlynegative() else self
     def fromindex(self,i):
@@ -189,8 +194,8 @@ class Pnum:
         return self.rawpnum((self.n2 >> 2) +  ((i-1)<<1) )
     def exacts(self):
         return self.eexacts
-    def iszero(self,x):
-        return x == 0
+    def iszero(self):
+        return self.v == 0
     def isinf(self):
         return self.v == (self.base.n2 >> 1)
     def isexact(self):
@@ -205,13 +210,14 @@ class Pnum:
         w = self.abs().v
         return (w > 0) and (w < (self.base.n2>>2))
     def _exacttimes(self,other):
-        rx = self.exactvalue().widen()
-        ry = other.exactvalue().widen()
-        return self.base.inf() if rx.isinf() or ry.isinf() else Pnum(self.base,rx*ry) # ????
-    def _exactsum(self,other):
-        rx = self.exactvalue().widen()
-        ry = other.exactvalue().widen()
-        return self.base.inf() if rx.isinf() or ry.isinf() else Pnum(self.base,rx+ry) # ????
+        rx = (self.exactvalue())
+        ry = (other.exactvalue())
+        return self.inf() if self.isinf() or other.isinf() else self.base.convert(rx*ry)
+    def _exactplus(self,other):
+        rx = (self.exactvalue())
+        ry = (other.exactvalue())
+        return self.inf() if self.isinf() or other.isinf() else self.base.convert(rx+ry)
+
     def slowsquare(self,other):
         ai = self.isinf()
         a0 = self.iszero()
@@ -233,7 +239,7 @@ class Pnum:
         #z1 = (!bothexact && isexact(z1)) ? nextpnum(z1) : z1
         z1 = z1.next() if (not abe and z1.isexact()) else z1
         z2 = z2.next() if (not abe and z2.isexact()) else z2
-        return Pbound(self.base,z1,z2)
+        return Pbound(z1,z2)
     # ritorns Pbound
     def slowtimes(self,other):
         ai = self.isinf()
@@ -242,9 +248,9 @@ class Pnum:
         b0 = other.iszero()
         if (ai and b0) or (a0 and bi):
             return Pbound.everything(self.base)
-        if (ai or bi):
+        elif (ai or bi):
             return Pbound.inf(self.base)
-        if (a0 or b0):
+        elif (a0 or b0):
             return Pbound.zero(self.base)
         ae = self.isexact()
         be = other.isexact()
@@ -262,8 +268,7 @@ class Pnum:
         #z1 = (!bothexact && isexact(z1)) ? nextpnum(z1) : z1
         z1 = z1.next() if (not abe and z1.isexact()) else z1
         z2 = z2.next() if (not abe and z2.isexact()) else z2
-        return Pbound(self.base,z1,z2)
-    #
+        return Pbound(z1,z2)
     def slowtwice(self):
         ai = self.isinf()
         if a:
@@ -281,7 +286,7 @@ class Pnum:
         #z1 = (!bothexact && isexact(z1)) ? nextpnum(z1) : z1
         z1 = z1.next() if (not abe and z1.isexact()) else z1
         z2 = z2.next() if (not abe and z2.isexact()) else z2
-        return Pbound(self.base,z1,z2)
+        return Pbound(z1,z2)
     # ritorns Pbound
     def slowplus(self,other):
         ai = self.isinf()
@@ -306,7 +311,7 @@ class Pnum:
         #z1 = (!bothexact && isexact(z1)) ? nextpnum(z1) : z1
         z1 = z1.next() if (not abe and z1.isexact()) else z1
         z2 = z2.next() if (not abe and z2.isexact()) else z2
-        return Pbound(self.base,z1,z2)
+        return Pbound(z1,z2)
     def exactvalue(self):
         # zero, infinity are special
         # fractional => integral and flip
@@ -397,11 +402,11 @@ class Pbound:
 
     def __str__(self):
         if self.empty:
-            return "pbound()"
-        elif self.v[0] == self.v[1]:
-            return "pbound(%s)" % self.v[0]
+            return "[]"
+        elif self.v[0].v == self.v[1].v:
+            return "[%s]" % self.v[0]
         else:
-            return "pbound(%s,%s)" % self.v
+            return "[%s-%s]" % self.v
 
 """def asfloat(self):
     pass
