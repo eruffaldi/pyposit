@@ -11,11 +11,11 @@ The fact that 1/x and -x are visible in the lattice circle, and this also applie
 
 The following is an example of the 1/x values  the circle
 
-![alt](doc/fractional.png)
+<img src='doc/fractional.png' width=256/>
 
 The following the inverse of a bound interval
 
-![alt](doc/boundinverse.png)
+<img src='doc/boundinverse.png' width=256/>
 
 
 # Unum 2.0 Implementation Limits
