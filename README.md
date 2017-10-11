@@ -1,15 +1,26 @@
 # pypnunum
-Gustafson Unum 2.0 written in Python
+Gustafson Unum 2.0 written in Python 3.5
 
-See my C++ version 
+See also the C++ version of the same https://github.com/eruffaldi/cppunum2
 
-Using elements of the Julia version https://github.com/jwmerrill/Pnums.jl
+This is based on elements of Julia version https://github.com/jwmerrill/Pnums.jl
 
-# Example of Plus and Times Table for the Set 4
+# Unum 2.0 Coolness
 
-# Unum 2.0 Limits
-- table needs for mul and plus growing up suqared of n
-- supperession of distincion between +-inf makes trouble for max and tangent
+The fact that 1/x and -x are visible in the lattice circle, and this also applies to bounds of such numbers (Pbounds)
+
+The following is an example of the 1/x values  the circle
+
+![alt](doc/fractional.png)
+
+The following the inverse of a bound interval
+
+![alt](doc/boundinverse.png)
+
+
+# Unum 2.0 Implementation Limits
+
+There is a known limit in the scalability of Unum 2.0 for + and * operations needing tables for. In the present implementation we compute the operation among items of the lattice (x +* y) and then convert them into the corresponidng unum.
 
 # Missing
 
@@ -24,3 +35,4 @@ Using elements of the Julia version https://github.com/jwmerrill/Pnums.jl
 # Ideas
 
 - map indices of Pnum given set A to indices of set B (e.g. from 16bit to 8bit and viceversa) assuming that the intervals are compatible (subset/superset)
+
