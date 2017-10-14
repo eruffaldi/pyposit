@@ -62,7 +62,7 @@ class Alphabet:
     def __init__(self,eexacts):
         self.eexacts = eexacts
         self.n = len(eexacts) # 0 and infinity excluded
-        self.n2 = ((len(eexacts))<<3)  # number of points
+        self.n2 = ((len(eexacts)+2)<<3)  # number of points
         # e.g. for having 32bits we need 2^29 exact points (!) 
         #   float has: 6 decimal digits exacts integers
         #   float has al 2^n exact
@@ -72,7 +72,8 @@ class Alphabet:
         self.mask = self.n2-1 # mask for 2^n
         self.storagetype = "auto"
         if verbose:
-            print ("mask is ",bin(self.mask), " n2 is ",self.n2," n exacts ",self.n," exacts ",eexacts )
+            print ("mask is ",bin(self.mask), " n2 is ",self.n2," n exacts ",self.n," exacts ",eexacts ,"infinity",bin(self.n2>>1))
+        print ("mask is ",bin(self.mask), " n2 is ",self.n2," n exacts ",self.n," exacts ",eexacts ,"infinity",bin(self.n2>>1),"one",bin(self.n2>>2))
     def one(self):
         return self.rawpnum(self.n2>>2)
     def zero(self):
@@ -158,6 +159,9 @@ class Alphabet:
     @staticmethod
     def p4():
         return Alphabet((fractions.Fraction(1,1),fractions.Fraction(2,1)))
+    @staticmethod
+    def p4():
+        return Alphabet((fractions.Fraction(1,1),fractions.Fraction(2,1),fractions.Fraction(4,1)))
     @staticmethod
     def p8b():
         return Alphabet((fractions.Fraction(1,1),fractions.Fraction(2,1),fractions.Fraction(4,1),fractions.Fraction(8,1),fractions.Fraction(16,1),fractions.Fraction(32,1)))
@@ -310,8 +314,8 @@ class Pnum:
         abe = ae and be
         x = self
         y = other
-        x1,x2 = (x,x) if ae else (x.prev(),x.next())
-        y1,y2 = (y,y) if be else (y.prev(),y.next())
+        x1,x2 = (x,x) if ae else (x.prev(),x.next()) # x1 x2 EXACT
+        y1,y2 = (y,y) if be else (y.prev(),y.next()) # y1 y2 EXACT
         z1 = x1._exactplus(y1)
         z2 = x2._exactplus(y2)
         #z1 = (!bothexact && isexact(z1)) ? nextpnum(z1) : z1
@@ -324,11 +328,11 @@ class Pnum:
         # negative => positive and flp resilts
         if self.isinf():
             return math.inf #fractions.Fraction(1,0)
-        if self.v == 0:
+        elif self.v == 0:
             return 0
         elif self.isstrictlynegative():
             return -((-self).exactvalue())
-        if self.isfractional():
+        elif self.isfractional():
             return inv(inv(self).exactvalue())
         else:
             # POSITIVE and NOT FRACTIONAL one..inf
