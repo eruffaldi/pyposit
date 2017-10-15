@@ -47,8 +47,8 @@ def main():
     parser.add_argument('--p4',action="store_true")
     parser.add_argument('--p5',action="store_true")
     parser.add_argument('--p8',action="store_true")
-    parser.add_argument('--p8b',action="store_true")
-    parser.add_argument('--p16',action="store_true")
+    parser.add_argument('--p8a',action="store_true")
+    parser.add_argument('--p16a',action="store_true")
     parser.add_argument('--verbose',action="store_true")
     parser.add_argument('--sparsetab')
     args = parser.parse_args()
@@ -66,10 +66,10 @@ def main():
             alpha = punum.Alphabet.p5()
         elif args.p8:
             alpha = punum.Alphabet.p8()
-        elif args.p8b:
-            alpha = punum.Alphabet.p8b()
-        elif args.p16:
-            alpha = punum.Alphabet.p16()
+        elif args.p8a:
+            alpha = punum.Alphabet.p8a()
+        elif args.p16a:
+            alpha = punum.Alphabet.p16a()
 
 
     print ("with",len(alpha.eexacts),"obtain",alpha.n," and ",alpha.n2)

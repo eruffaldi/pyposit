@@ -59,10 +59,15 @@ class Alphabet4:
 
 # This is generic
 class Alphabet:
-    def __init__(self,eexacts):
+    def __init__(self,eexacts,scale=1):
+        if eexacts[0] != 1:
+            raise Exception("Alphabet should start with 1")
+        elif bin(len(eexacts)).count("1") != 1:
+            raise Exception("Alphabet should be power of two and not %d" % len(eexacts))
         self.eexacts = eexacts
+        self.scale = scale
         self.n = len(eexacts) # 0 and infinity excluded
-        self.n2 = ((len(eexacts)+2)<<3)  # number of points
+        self.n2 = (len(eexacts)<<3)  # number of points
         # e.g. for having 32bits we need 2^29 exact points (!) 
         #   float has: 6 decimal digits exacts integers
         #   float has al 2^n exact
@@ -154,23 +159,24 @@ class Alphabet:
             else:
                 return self.fromexactsindex(lo).next()
     @staticmethod
-    def p3():
+    def p1():
         return Alphabet((fractions.Fraction(1,1),))
     @staticmethod
-    def p4():
+    def p2():
         return Alphabet((fractions.Fraction(1,1),fractions.Fraction(2,1)))
     @staticmethod
     def p4():
-        return Alphabet((fractions.Fraction(1,1),fractions.Fraction(2,1),fractions.Fraction(4,1)))
-    @staticmethod
-    def p8b():
-        return Alphabet((fractions.Fraction(1,1),fractions.Fraction(2,1),fractions.Fraction(4,1),fractions.Fraction(8,1),fractions.Fraction(16,1),fractions.Fraction(32,1)))
+        return Alphabet((fractions.Fraction(1,1),fractions.Fraction(2,1),fractions.Fraction(4,1),fractions.Fraction(8,1)))
     @staticmethod
     def p8():
-        return Alphabet([fractions.Fraction(2**n*(4 + m),4) for m in range(0,4) for n in range(0,8)])
+        return Alphabet([fractions.Fraction(1<<k,1) for k in range(0,8)])
     @staticmethod
-    def p16():
-        return Alphabet([fractions.Fraction(2**n*(256 + m),256) for m in range(0,256) for n in range(0,32)])
+    def p8a():
+        # use scaled by 4
+        return Alphabet([fractions.Fraction(2**n*(4 + m)) for m in range(0,4) for n in range(0,8)],scale=4)
+    @staticmethod
+    def p16a():
+        return Alphabet([fractions.Fraction(2**n*(256 + m)) for m in range(0,256) for n in range(0,32)],scale=256)
 
 class Pnum:
     def __init__(self,base,v):
