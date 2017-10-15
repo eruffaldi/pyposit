@@ -59,13 +59,17 @@ class Alphabet4:
 
 # This is generic
 class Alphabet:
-    def __init__(self,eexacts,scale=1):
+    def __init__(self,eexacts):
         if eexacts[0] != 1:
             raise Exception("Alphabet should start with 1")
         elif bin(len(eexacts)).count("1") != 1:
             raise Exception("Alphabet should be power of two and not %d" % len(eexacts))
+        last = 0
+        for x in eexacts:
+            if x < 1 or x <= last:
+                raise Exception("Alphabet should be of monotonic >= 1 got %s before %s" % (last,x))
+            last = x
         self.eexacts = eexacts
-        self.scale = scale
         self.n = len(eexacts) # 0 and infinity excluded
         self.n2 = (len(eexacts)<<3)  # number of points
         # e.g. for having 32bits we need 2^29 exact points (!) 
@@ -173,10 +177,10 @@ class Alphabet:
     @staticmethod
     def p8a():
         # use scaled by 4
-        return Alphabet([fractions.Fraction(2**n*(4 + m)) for m in range(0,4) for n in range(0,8)],scale=4)
+        return Alphabet([fractions.Fraction(2**n*(4 + m),4) for m in range(0,4) for n in range(0,8)])
     @staticmethod
     def p16a():
-        return Alphabet([fractions.Fraction(2**n*(256 + m)) for m in range(0,256) for n in range(0,32)],scale=256)
+        return Alphabet([fractions.Fraction(2**n*(256 + m),256) for m in range(0,256) for n in range(0,32)])
 
 class Pnum:
     def __init__(self,base,v):

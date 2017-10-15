@@ -92,15 +92,18 @@ def main():
             if i == 0:
                 if j == 0:
                     # exactly 1+1 or 1-1 
-                    whats = [(a,b),(a,-b)]
+                    # keep first v < second
+                    whats = [(a,b),(-a,b)]
                 else:
                     # a is 1, j > 1
-                    whats = [(a,b),(a,-b),(a,ib),(a,-ib)]
+                    # keep first v < second
+                    whats = [(a,b),(a,-b),(-a,-ib),(a,-ib)]
             elif i == j:
-                whats = [(a,a),(a,-a),(a,ia),(ia,ia),(a,-ia)]
+
+                whats = [(a,a),(a,-a),(ia,a),(ia,ia),(a,-ia)]
             else:
                 # both > 1
-                whats = [(a,b),(a,-b),(b,ia),(a,ib),(ia,ib),(ia,-ib),(b,-ia),(a,-ib)]
+                whats = [(a,b),(a,-b),(ia,b),(-a,-ib),(-ia,-ib),(ia,-ib),(ia,-b),(a,-ib)]
             for k,(xa,xb) in enumerate(whats):
                 print (xa.v,xb.v,ae,be,k,len(whats))
                 x1 = xa.exactvalue()
