@@ -16,7 +16,7 @@ Summation and products require tables, so the gentable script is the first step 
 A- full: 8n 8n = 64n^4
 B- sym: 8n  (8n+1)/2  = 32n^ + 4n taking all pointso rdered
 C- exact only: 4n (4n+1)/2 taking exact points ordered
-D- exact sym only: 4n (4n+1)/4 = 16n^2+n using sign symmetric
+D- exact sym only: 4n (4n+1)/4 = 4n^2+n using sign symmetric
 
 D is 2 times smaller yhan B but still quadratic
 

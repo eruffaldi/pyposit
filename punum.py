@@ -175,6 +175,10 @@ class Alphabet:
     def p8():
         return Alphabet([fractions.Fraction(1<<k,1) for k in range(0,8)])
     @staticmethod
+    def ppi8():
+        pi = math.pi
+        return Alphabet(sorted([1,pi,2*pi,3*pi/2,pi/2,3/4.0*math.pi,math.pi/3.0,math.pi*2/3.0]))
+    @staticmethod
     def p8a():
         # use scaled by 4
         return Alphabet([fractions.Fraction(2**n*(4 + m),4) for m in range(0,4) for n in range(0,8)])
