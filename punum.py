@@ -70,7 +70,7 @@ class Alphabet:
                 raise Exception("Alphabet should be of monotonic >= 1 got %s before %s" % (last,x))
             last = x
         self.eexacts = eexacts
-        self.n = len(eexacts) # 0 and infinity excluded
+        self.n = len(eexacts) 
         self.n2 = (len(eexacts)<<3)  # number of points
         # e.g. for having 32bits we need 2^29 exact points (!) 
         #   float has: 6 decimal digits exacts integers
@@ -504,10 +504,33 @@ class Pbound:
     def __str__(self):
         if self.empty:
             return "[]"
+        elif self.iseverything():
+            return "[all]"
         elif self.v[0].v == self.v[1].v:
-            return "[%s]" % self.v[0]
+            if self.v[0].isexact():
+                return "[" + str(self.v[0].exactvalue())+"]"
+            else:
+                return "(%s,%s)" % (str(self.v[0].prev().exactvalue()),str(self.v[1].next().exactvalue()))
         else:
-            return "[%s-%s]" % self.v
+            if self.v[0].isexact():
+                pre = "[" + str(self.v[0].exactvalue())
+            else:
+                pre = "(" + str(self.v[0].prev().exactvalue())
+            if self.v[1].isexact():
+                post = str(self.v[1].exactvalue()) + "]"
+            else:
+                post = str(self.v[1].next().exactvalue()) + ")"
+            return "%s,%s" % (pre,post)
+    def __neg__(self):
+        if self.iseverything():
+            return self.everything()
+        else:
+            return Pbound(~-elf.v[1],-self.v[1])
+    def __invert__(self):
+        if self.iseverything():
+            return self.everything()
+        else:
+            return Pbound(~self.v[1],~self.v[0])
 
 """def asfloat(self):
     pass
@@ -521,7 +544,7 @@ def pow(self,n):
     pass"""
 
 #https://github.com/jwmerrill/Pnums.jl/blob/master/src/ops.jl
-
+"""
 # set of Pnums
 class Sopn:
     def __init__(self,x=None):
@@ -542,9 +565,6 @@ class Sopn:
         pass
     def __neg__(self):
         # mapreduce((-),Sopn, eachpnum(self))
-        pass
-    def __invert__(self): # ~x == /x
-        # mapreduce(inv,Sopn, eachpnum(self))
         pass
     def __ior_(self,p):
         # inplace or of the pvvoe
@@ -590,7 +610,7 @@ def _(arg):
 @neg.register(Sopn)
 def _(arg):
     return -self
-
+"""
 @inv.register(Pnum)
 def _(arg ):
     return arg.__invert__();
